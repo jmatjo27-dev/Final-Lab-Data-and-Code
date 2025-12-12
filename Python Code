@@ -1,0 +1,90 @@
+#Intensity Plot
+import matplotlib.pyplot as plt
+import pandas as pd
+
+file_path = "/Users/jacobjoseph/Downloads/Book8.csv"
+df = pd.read_csv(file_path, header=None, names=['Position', 'A_0'])
+
+    
+x_data = df['Position'].values
+y_data = df['A_0'].values
+
+fig,ax = plt.subplots()
+ax.plot(x_data, y_data)
+ax.set_xlabel('Position')
+ax.set_ylabel('Brightness')
+plt.title('Diffraction Intensity Plot')
+
+plt.show()
+
+
+#Curve Fitting
+import pandas as pd
+import numpy as np
+import matplotlib.pyplot as plt
+from scipy.optimize import curve_fit
+
+
+file_path = "/Users/jacobjoseph/Downloads/Book8.csv"
+df = pd.read_csv(file_path, header=None, names=['Position', 'A_0'])
+
+    
+x_data = df['Position'].values
+y_data = df['A_0'].values
+
+
+WAVELENGTH = 6.5e-5    # Laser wavelength (650 nm) in cm
+D_FIXED = 1.6e-4       # CD Grating Spacing (d = 1.6 µm in cm)
+A_FIXED = 0.5e-4       # CD Slit Width (a = 0.5 µm in cm)
+
+
+def multiple_slit_intensity_model(x, I_max, N, L_val):
+    """
+    Multiple-slit diffraction model for CD, fitting I_max, N, and L.
+    """
+    
+
+    theta = np.arctan(x / L_val)
+    
+
+    alpha = (np.pi * A_FIXED / WAVELENGTH) * np.sin(theta)
+    beta = (np.pi * D_FIXED / WAVELENGTH) * np.sin(theta)
+
+    sinc_alpha_sq = np.where(np.abs(alpha) < 1e-6, 1.0, (np.sin(alpha) / alpha)**2)
+    
+
+    sin_beta_sq = np.sin(beta)**2
+    sinc_N_beta_sq = np.where(np.abs(sin_beta_sq) < 1e-6, N**2, (np.sin(N * beta)**2 / sin_beta_sq))
+    
+
+    I = I_max * sinc_alpha_sq * sinc_N_beta_sq
+    return I
+
+
+p0 = (4.0, 10.0, 40.0) # Initial Guess: I_max, N, L
+bounds = ((0.0, 1.0, 10.0), (1000.0, 300.0, 50.0))
+
+
+popt, pcov = curve_fit(
+    multiple_slit_intensity_model, 
+    x_data, 
+    y_data, 
+    p0, 
+    bounds=bounds,
+)
+I_max_fit, N_fit, L_fit = popt
+
+
+popt_best = (I_max_fit, N_fit, L_fit)
+y_fit_best = multiple_slit_intensity_model(x_data, *popt_best)
+
+plt.figure(figsize=(10, 6))
+plt.plot(x_data, y_data, 'b.', label='Experimental Data', markersize=3)
+plt.plot(x_data, y_fit_best, 'g-', 
+         label=f'Fit', linewidth=2)
+
+plt.title('Fit Comparison')
+plt.xlabel('Position (cm)')
+plt.ylabel('Brightness')
+plt.legend()
+plt.show() 
