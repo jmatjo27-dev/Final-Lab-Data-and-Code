@@ -1,21 +1,19 @@
 #Intensity Plot
 import matplotlib.pyplot as plt
 import pandas as pd
+file_path = "/Users/jacobjoseph/Downloads/Book7.csv"
+df = pd.read_csv(file_path, header=None, names=['t_ms', 'A_0'])
+t_ms = df['t_ms'].values
+A_0 = df['A_0'].values
 
-file_path = "/Users/jacobjoseph/Downloads/Book8.csv"
-df = pd.read_csv(file_path, header=None, names=['Position', 'A_0'])
-
-    
-x_data = df['Position'].values
-y_data = df['A_0'].values
-
-fig,ax = plt.subplots()
-ax.plot(x_data, y_data)
+fig, ax = plt.subplots(figsize=(10, 6))
+ax.plot(t_ms, A_0)
 ax.set_xlabel('Position')
 ax.set_ylabel('Brightness')
 plt.title('Diffraction Intensity Plot')
 
 plt.show()
+
 
 
 #Curve Fitting
@@ -25,7 +23,7 @@ import matplotlib.pyplot as plt
 from scipy.optimize import curve_fit
 
 
-file_path = "/Users/jacobjoseph/Downloads/Book8.csv"
+file_path = "/Users/jacobjoseph/Downloads/Book7.csv"
 df = pd.read_csv(file_path, header=None, names=['Position', 'A_0'])
 
     
@@ -88,79 +86,5 @@ plt.title('Fit Comparison')
 plt.xlabel('Position (cm)')
 plt.ylabel('Brightness')
 plt.legend()
+
 plt.show() 
-
-
-#Fixed I_0
-import pandas as pd
-import numpy as np
-import matplotlib.pyplot as plt
-from scipy.optimize import curve_fit
-
-
-file_path = "/Users/jacobjoseph/Downloads/Book8.csv"
-df = pd.read_csv(file_path, header=None, names=['Position', 'A_0'])
-
-    
-x_data = df['Position'].values
-y_data = df['A_0'].values
-
-
-WAVELENGTH = 6.5e-5    # Laser wavelength (650 nm) in cm
-D_FIXED = 1.6e-4       # CD Grating Spacing (d = 1.6 µm in cm)
-A_FIXED = 0.5e-4       # CD Slit Width (a = 0.5 µm in cm)
-L = 26.5 #slit to screen
-I_0 = 4.00
-
-
-def multiple_slit_intensity_model(x, N):
-    """
-    Multiple-slit diffraction model for CD, fitting N.
-    """
-    
-
-    theta = np.arctan(x / L)
-    
-
-    alpha = (np.pi * A_FIXED / WAVELENGTH) * np.sin(theta)
-    beta = (np.pi * D_FIXED / WAVELENGTH) * np.sin(theta)
-
-    sinc_alpha_sq = np.where(np.abs(alpha) < 1e-6, 1.0, (np.sin(alpha) / alpha)**2)
-    
-
-    sin_beta_sq = np.sin(beta)**2
-    sinc_N_beta_sq = np.where(np.abs(sin_beta_sq) < 1e-6, N**2, (np.sin(N * beta)**2 / sin_beta_sq))
-    
-
-    I = I_0 * sinc_alpha_sq * sinc_N_beta_sq
-    return I
-
-
-p0 = (10.0) # Initial Guess: N 
-bounds = ((1.0), (1000.0))
-
-
-popt, pcov = curve_fit(
-    multiple_slit_intensity_model, 
-    x_data, 
-    y_data, 
-    p0, 
-    bounds=bounds,
-)
-N_fit = popt
-
-
-
-y_fit_best = multiple_slit_intensity_model(x_data, N_fit)
-
-plt.figure(figsize=(10, 6))
-plt.plot(x_data, y_data, 'b.', label='Experimental Data', markersize=3)
-plt.plot(x_data, y_fit_best, 'g-', 
-         label=f'Fit', linewidth=2)
-
-plt.title('Fit Comparison')
-plt.xlabel('Position (cm)')
-plt.ylabel('Brightness')
-plt.legend()
-plt.show() 
-
